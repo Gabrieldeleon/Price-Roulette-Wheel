@@ -22,7 +22,7 @@
 
     // ⚠️ YOUR GOOGLE APPS SCRIPT URL
     const GOOGLE_SHEETS_CONFIG = {
-      scriptUrl: 'https://script.google.com/macros/s/AKfycbyI6bKc40GH8tD_xVBaT2wctgnQUPPd3K4alo9DlOSAXGFyYOhkBe4TbS9aE7JoHLGS/exec'
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbxWVVZvqfwET_UcciKKeFtpeL26aPRpjBLZAutXFzyHW7LAkEYGa2dPSOzLPcWlJxgk/exec'
     };
 
     function PrizeWheel() {
@@ -32,6 +32,8 @@
       const [winner, setWinner] = useState(null);
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
+      const [hasSpun, setHasSpun] = useState(false);
+      const [userPrize, setUserPrize] = useState(null);
       
       // Customizable settings
       const [heading, setHeading] = useState("Costazul: Spin to Win!");
@@ -43,7 +45,18 @@
       // Load from Google Apps Script
       useEffect(() => {
         loadFromGoogleSheets();
+        checkIfAlreadySpun();
       }, []);
+
+      const checkIfAlreadySpun = () => {
+        const spinData = localStorage.getItem('prizeWheelSpin');
+        if (spinData) {
+          const data = JSON.parse(spinData);
+          setHasSpun(true);
+          setUserPrize(data.prize);
+          console.log('🔒 User has already spun:', data);
+        }
+      };
 
       const loadFromGoogleSheets = async () => {
         try {
@@ -114,6 +127,12 @@
       const spinWheel = () => {
         if (isSpinning) return;
         
+        // Check if user has already spun
+        if (hasSpun) {
+          alert(`You've already spun the wheel! You won: ${userPrize}`);
+          return;
+        }
+        
         if (availableSegments.length === 0) {
           alert("All prizes have been won! No more spins available.");
           return;
@@ -136,6 +155,14 @@
           
           const wonPrize = availableSegments[winningIndex];
           setWinner(wonPrize.text);
+          setUserPrize(wonPrize.text);
+          
+          // Save to localStorage that user has spun
+          localStorage.setItem('prizeWheelSpin', JSON.stringify({
+            prize: wonPrize.text,
+            timestamp: new Date().toISOString()
+          }));
+          setHasSpun(true);
           
           const updatedSegments = segments.map(seg => 
             seg.text === wonPrize.text && seg.color === wonPrize.color
@@ -163,6 +190,16 @@
       const saveSettings = async () => {
         await saveToGoogleSheets(segments);
         alert('Settings saved!');
+      };
+
+      const resetSpinLimit = () => {
+        if (confirm('Are you sure you want to reset the spin limit? This allows the user to spin again.')) {
+          localStorage.removeItem('prizeWheelSpin');
+          setHasSpun(false);
+          setUserPrize(null);
+          setWinner(null);
+          alert('Spin limit reset! You can spin again.');
+        }
       };
 
       const Settings = ({ size = 20 }) => (
@@ -276,12 +313,20 @@
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <h4 className="font-medium">Prize Segments</h4>
-                      <button
-                        onClick={saveSettings}
-                        className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-bold"
-                      >
-                        💾 Save to Sheets
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={resetSpinLimit}
+                          className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold"
+                        >
+                          🔄 Reset My Spin
+                        </button>
+                        <button
+                          onClick={saveSettings}
+                          className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-bold"
+                        >
+                          💾 Save to Sheets
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-3 max-h-64 overflow-y-auto">
                       {segments.map((segment, index) => (
@@ -409,16 +454,27 @@
               <div className="flex justify-center mb-6">
                 <button
                   onClick={spinWheel}
-                  disabled={isSpinning}
+                  disabled={isSpinning || hasSpun}
                   className={`px-12 py-4 rounded-full text-xl font-bold shadow-2xl transform transition-all duration-200 ${
-                    isSpinning
+                    isSpinning || hasSpun
                       ? 'bg-gray-400 cursor-not-allowed'
                       : 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 hover:scale-105 active:scale-95 text-gray-900'
                   }`}
                 >
-                  {isSpinning ? 'SPINNING...' : buttonText}
+                  {isSpinning ? 'SPINNING...' : hasSpun ? 'ALREADY SPUN' : buttonText}
                 </button>
               </div>
+
+              {hasSpun && !winner && (
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center gap-3 bg-white/10 text-white px-8 py-3 rounded-full">
+                    <Award size={24} />
+                    <div className="text-sm">
+                      You already won: <span className="font-bold">{userPrize}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {winner && (
                 <div className="text-center animate-bounce">
