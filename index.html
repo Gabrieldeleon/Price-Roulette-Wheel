@@ -22,8 +22,9 @@
     const { useState, useEffect } = React;
 
     // ⚠️ CONFIGURE THIS WITH YOUR GOOGLE APPS SCRIPT URL
+    // See GOOGLE_APPS_SCRIPT_SETUP.md for instructions
     const GOOGLE_SHEETS_CONFIG = {
-      scriptUrl: 'https://script.google.com/macros/s/AKfycbyI6bKc40GH8tD_xVBaT2wctgnQUPPd3K4alo9DlOSAXGFyYOhkBe4TbS9aE7JoHLGS/exec'  // deployed Google Apps Script URL
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbyI6bKc40GH8tD_xVBaT2wctgnQUPPd3K4alo9DlOSAXGFyYOhkBe4TbS9aE7JoHLGS/exec'  // Replace with your deployed Google Apps Script URL
     };
 
     function PrizeWheel() {
@@ -97,25 +98,20 @@
             seg.currentWins.toString()
           ]);
           
-          const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEETS_CONFIG.spreadsheetId}/values/${GOOGLE_SHEETS_CONFIG.range}?valueInputOption=RAW&key=${GOOGLE_SHEETS_CONFIG.apiKey}`;
-          
-          const response = await fetch(url, {
-            method: 'PUT',
+          const response = await fetch(GOOGLE_SHEETS_CONFIG.scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',  // Required for Google Apps Script
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({ values })
           });
           
-          if (!response.ok) {
-            throw new Error(`Failed to save: ${response.statusText}`);
-          }
-          
           console.log('✅ Saved to Google Sheets successfully');
           
         } catch (err) {
           console.error('❌ Error saving to Google Sheets:', err);
-          alert('Failed to save win count. Please try again.');
+          alert('Failed to save win count. Error: ' + err.message);
         }
       };
 
