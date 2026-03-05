@@ -21,11 +21,10 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // ⚠️ CONFIGURE THESE VALUES WITH YOUR GOOGLE SHEETS CREDENTIALS
+    // ⚠️ CONFIGURE THIS WITH YOUR GOOGLE APPS SCRIPT URL
+    // See GOOGLE_APPS_SCRIPT_SETUP.md for instructions
     const GOOGLE_SHEETS_CONFIG = {
-      apiKey: 'AIzaSyBaUrwWBya95OSj42xWH-6lez4Txgov_JA',           // Replace with your API key
-      spreadsheetId: '1xqs-vDHGAd5e5jACau0U1SqDDf-q9oA4eyXDiyskKVQ',  // Replace with your spreadsheet ID
-      range: 'Sheet1!A2:E100'                // Adjust if your sheet has a different name
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbx1mhQ_6K0FY3XgPMfoCUSPwEl1_kFkWFo6Y4Um5pBxI2n5pMN8nNrxoaEHbhm_in9u/exec'  // Replace with your deployed Google Apps Script URL
     };
 
     function PrizeWheel() {
