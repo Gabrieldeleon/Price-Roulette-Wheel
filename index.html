@@ -98,7 +98,8 @@
             seg.currentWins.toString()
           ]);
           
-          const response = await fetch(GOOGLE_SHEETS_CONFIG.scriptUrl, {
+          // Send to Google Apps Script
+          await fetch(GOOGLE_SHEETS_CONFIG.scriptUrl, {
             method: 'POST',
             mode: 'no-cors',  // Required for Google Apps Script
             headers: {
@@ -107,11 +108,13 @@
             body: JSON.stringify({ values })
           });
           
-          console.log('✅ Saved to Google Sheets successfully');
+          // With no-cors mode, we can't verify the response
+          // But if no error was thrown, it likely worked
+          console.log('✅ Save request sent to Google Sheets');
           
         } catch (err) {
           console.error('❌ Error saving to Google Sheets:', err);
-          alert('Failed to save win count. Error: ' + err.message);
+          alert('Failed to send save request. Error: ' + err.message);
         }
       };
 
