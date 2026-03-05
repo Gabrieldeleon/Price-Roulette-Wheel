@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prize Wheel</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+const { useState } = React;
+
+function PrizeWheel() {
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [winner, setWinner] = useState(null);
+  
+  // Customizable settings
+  const [heading, setHeading] = useState("Costazul: Spin to Win!");
+  const [logoUrl, setLogoUrl] = useState("https://cdn.shopify.com/s/files/1/0260/9024/2151/files/Costazul-markAsset_2_3x_9a3e553e-3ade-4665-b950-6237e7c90867.png?v=1772676905");
+  const [buttonText, setButtonText] = useState("SPIN THE WHEEL");
+  
+  // Prize segments with customizable colors and win limits
+  const [segments, setSegments] = useState([
+    { text: "Bottle", color: "#005c91", textColor: "#FFFFFF", maxWins: 100, currentWins: 0 },
+    { text: "Ball Marker!", color: "#4ECDC4", textColor: "#FFFFFF", maxWins: 300, currentWins: 0 },
+    { text: "15% OFF", color: "#2c4387", textColor: "#FFFFFF", maxWins: 10, currentWins: 0 },
+    { text: "Koozie", color: "#4ECDC4", textColor: "#FFFFFF", maxWins: 100, currentWins: 0 },
+    { text: "$25 Gift Card", color: "#005c91", textColor: "#FFFFFF", maxWins: 4, currentWins: 0 },
+    { text: "$100 Gift Card", color: "#4ECDC4", textColor: "#FFFFFF", maxWins: 1, currentWins: 0 }, 
+    { text: "Tumbler", color: "#2c4387", textColor: "#FFFFFF", maxWins: 5, currentWins: 0 },
+    { text: "Try Again!", color: "#4ECDC4", textColor: "#FFFFFF", maxWins: -1, currentWins: 0 } // -1 = unlimited
+  ]);
+
+  // Filter out segments that have reached their win limit
+  const availableSegments = segments.filter(segment => 
+    segment.maxWins === -1 || segment.currentWins < segment.maxWins
+  );
+
+  const spinWheel = () => {
+    if (isSpinning) return;
+    
+    // Check if there are any prizes left
+    if (availableSegments.length === 0) {
+      alert("All prizes have been won! No more spins available.");
+      return;
+    }
+    
+    setIsSpinning(true);
+    setWinner(null);
+    
+    // Random spins between 5-10 full rotations plus random position
+    const spins = 5 + Math.random() * 5;
+    const randomDegree = Math.random() * 360;
+    const totalRotation = rotation + (spins * 360) + randomDegree;
+    
+    setRotation(totalRotation);
+    
+    // Calculate winner after spin completes
+    setTimeout(() => {
+      const normalizedRotation = totalRotation % 360;
+      const segmentAngle = 360 / availableSegments.length;
+      // Adjust for pointer at top (270 degrees offset)
+      const adjustedRotation = (360 - normalizedRotation + 90) % 360;
+      const winningIndex = Math.floor(adjustedRotation / segmentAngle);
+      
+      const wonPrize = availableSegments[winningIndex];
+      setWinner(wonPrize.text);
+      
+      // Increment win counter for this prize
+      setSegments(prevSegments => 
+        prevSegments.map(seg => 
+          seg.text === wonPrize.text && seg.color === wonPrize.color
+            ? { ...seg, currentWins: seg.currentWins + 1 }
+            : seg
+        )
+      );
+      
+      setIsSpinning(false);
+    }, 4000);
+  };
+
+  const updateSegment = (index, field, value) => {
+    const newSegments = [...segments];
+    if (field === 'maxWins') {
+      newSegments[index][field] = parseInt(value);
+    } else {
+      newSegments[index][field] = value;
+    }
+    setSegments(newSegments);
+  };
+
+  // Simple icon components (replacing lucide-react)
+  const Settings = ({ size = 20 }) => (
+    <svg id="Icon_feather-settings" data-name="Icon feather-settings" xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 36 36">
+    <path id="Path_1" data-name="Path 1" d="M22.5,18A4.5,4.5,0,1,1,18,13.5,4.5,4.5,0,0,1,22.5,18Z" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+    <path id="Path_2" data-name="Path 2" d="M29.1,22.5a2.475,2.475,0,0,0,.495,2.73l.09.09a3,3,0,1,1-4.245,4.245l-.09-.09a2.5,2.5,0,0,0-4.23,1.77V31.5a3,3,0,1,1-6,0v-.135A2.475,2.475,0,0,0,13.5,29.1a2.475,2.475,0,0,0-2.73.495l-.09.09A3,3,0,1,1,6.435,25.44l.09-.09a2.5,2.5,0,0,0-1.77-4.23H4.5a3,3,0,1,1,0-6h.135A2.475,2.475,0,0,0,6.9,13.5a2.475,2.475,0,0,0-.5-2.73l-.09-.09A3,3,0,1,1,10.56,6.435l.09.09a2.475,2.475,0,0,0,2.73.495h.12A2.475,2.475,0,0,0,15,4.755V4.5a3,3,0,0,1,6,0v.135a2.5,2.5,0,0,0,4.23,1.77l.09-.09a3,3,0,1,1,4.245,4.245l-.09.09a2.475,2.475,0,0,0-.5,2.73v.12A2.475,2.475,0,0,0,31.245,15H31.5a3,3,0,0,1,0,6h-.135A2.475,2.475,0,0,0,29.1,22.5Z" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+    </svg>
+
+  );
+
+  const Award = ({ size = 32 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="7"/>
+      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+    </svg>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full">
+        {/* Settings Button */}
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="mb-4 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 backdrop-blur-sm transition-all"
+        >
+          <Settings size={20} />
+          {showSettings ? 'Hide Settings' : 'Show Settings'}
+        </button>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="mb-6 bg-white/10 backdrop-blur-md rounded-xl p-6 text-white">
+            <h3 className="text-xl font-bold mb-4">Customization Settings</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Heading</label>
+                <input
+                  type="text"
+                  value={heading}
+                  onChange={(e) => setHeading(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Logo URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    className="flex-1 px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    placeholder="Enter image URL"
+                  />
+                  <button
+                    onClick={() => {
+                      // Force reload the image by adding a timestamp
+                      const img = new Image();
+                      img.src = logoUrl;
+                      img.onload = () => alert('Image loaded successfully!');
+                      img.onerror = () => alert('Failed to load image. Check the URL.');
+                    }}
+                    className="px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 border border-white/30 text-white text-sm transition-all"
+                  >
+                    Test Load
+                  </button>
+                </div>
+                <p className="text-xs text-white/60 mt-1">Paste an image URL and click "Test Load" to verify</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Button Text</label>
+                <input
+                  type="text"
+                  value={buttonText}
+                  onChange={(e) => setButtonText(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                />
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-3">Prize Segments</h4>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {segments.map((segment, index) => (
+                    <div key={index} className="bg-white/10 p-3 rounded-lg">
+                      <div className="grid grid-cols-1 gap-2">
+                        <input
+                          type="text"
+                          value={segment.text}
+                          onChange={(e) => updateSegment(index, 'text', e.target.value)}
+                          placeholder="Prize text"
+                          className="px-3 py-2 rounded bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            type="color"
+                            value={segment.color}
+                            onChange={(e) => updateSegment(index, 'color', e.target.value)}
+                            className="h-10 w-full rounded cursor-pointer"
+                            title="Background Color"
+                          />
+                          <input
+                            type="color"
+                            value={segment.textColor}
+                            onChange={(e) => updateSegment(index, 'textColor', e.target.value)}
+                            className="h-10 w-full rounded cursor-pointer"
+                            title="Text Color"
+                          />
+                          <div>
+                            <input
+                              type="number"
+                              value={segment.maxWins}
+                              onChange={(e) => updateSegment(index, 'maxWins', e.target.value)}
+                              placeholder="Max wins"
+                              min="-1"
+                              className="h-10 w-full px-2 rounded bg-white/20 border border-white/30 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                              title="Max Wins (-1 = unlimited)"
+                            />
+                          </div>
+                        </div>
+                        <div className="text-xs text-white/70">
+                          Won: {segment.currentWins} / {segment.maxWins === -1 ? '∞' : segment.maxWins}
+                          {segment.maxWins !== -1 && segment.currentWins >= segment.maxWins && 
+                            <span className="ml-2 text-red-300 font-semibold">✓ LIMIT REACHED</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Wheel Container */}
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-4">
+            <img 
+              key={logoUrl}
+              src={logoUrl} 
+              alt="Logo" 
+              className="w-24 h-24 rounded-full object-cover border-4 border-white/30 shadow-lg"
+              onError={(e) => {
+                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23667eea'/%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.3em' fill='white'%3E🎁%3C/text%3E%3C/svg%3E";
+              }}
+            />
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-white drop-shadow-lg">
+            {heading}
+          </h1>
+
+          {/* Wheel Container */}
+          <div className="relative flex justify-center items-center mb-8">
+          
+
+            {/* Wheel */}
+            <div className="relative w-80 h-80 md:w-96 md:h-96">
+              {/* Fixed center pointer - stays in place while wheel spins */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                <svg width="180" height="100" viewBox="0 0 180 100">
+                  {/* Center circle - centered in the viewBox (35% smaller) */}
+                  <circle cx="90" cy="50" r="26" fill="#FFD700" stroke="#1a1a2e" strokeWidth="3" />
+                  
+                  {/* Triangle pointer extending from circle to the right (30% shorter) */}
+                  <path
+                    d="M 116 41 L 116 59 L 135.6 50 Z"
+                    fill="#FFD700"
+                    stroke="#1a1a2e"
+                    strokeWidth="3"
+                    strokeLinejoin="miter"
+                  />
+                </svg>
+              </div>
+              
+              <svg
+                viewBox="0 0 400 400"
+                className="w-full h-full drop-shadow-2xl"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+                }}
+              >
+                {/* Outer ring */}
+                <circle cx="200" cy="200" r="195" fill="#1a1a2e" />
+                
+                {/* Segments */}
+                {availableSegments.map((segment, index) => {
+                  const angle = (360 / availableSegments.length);
+                  const startAngle = index * angle - 90;
+                  const endAngle = startAngle + angle;
+                  
+                  const startRad = (startAngle * Math.PI) / 180;
+                  const endRad = (endAngle * Math.PI) / 180;
+                  
+                  const x1 = 200 + 180 * Math.cos(startRad);
+                  const y1 = 200 + 180 * Math.sin(startRad);
+                  const x2 = 200 + 180 * Math.cos(endRad);
+                  const y2 = 200 + 180 * Math.sin(endRad);
+                  
+                  const midAngle = startAngle + angle / 2;
+                  const textAngle = midAngle;
+                  const textRadius = 120;
+                  const textX = 200 + textRadius * Math.cos((midAngle * Math.PI) / 180);
+                  const textY = 200 + textRadius * Math.sin((midAngle * Math.PI) / 180);
+                  
+                  return (
+                    <g key={index}>
+                      <path
+                        d={`M 200 200 L ${x1} ${y1} A 180 180 0 0 1 ${x2} ${y2} Z`}
+                        fill={segment.color}
+                        stroke="#1a1a2e"
+                        strokeWidth="2"
+                      />
+                      <text
+                        x={textX}
+                        y={textY}
+                        fill={segment.textColor}
+                        fontSize="16"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        transform={`rotate(${textAngle}, ${textX}, ${textY})`}
+                      >
+                        {segment.text}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+
+          {/* Spin Button */}
+          <div className="flex justify-center mb-6">
+            <button
+              onClick={spinWheel}
+              disabled={isSpinning}
+              className={`px-12 py-4 rounded-full text-xl font-bold shadow-2xl transform transition-all duration-200 ${
+                isSpinning
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 hover:scale-105 active:scale-95 text-gray-900'
+              }`}
+            >
+              {isSpinning ? 'SPINNING...' : buttonText}
+            </button>
+          </div>
+
+          {/* Winner Display */}
+          {winner && (
+            <div className="text-center animate-bounce">
+              <div className="inline-flex items-center gap-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-8 py-4 rounded-full shadow-2xl">
+                <Award size={32} />
+                <div>
+                  <div className="text-sm font-medium">You won:</div>
+                  <div className="text-2xl font-bold">{winner}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+    
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<PrizeWheel />);
+  </script>
+</body>
+</html>
